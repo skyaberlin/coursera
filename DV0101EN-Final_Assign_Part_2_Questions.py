@@ -19,7 +19,7 @@ data = pd.read_csv('https://cf-courses-data.s3.us.cloud-object-storage.appdomain
 app = dash.Dash(__name__)
 
 # Set the title of the dashboard
-#app.title = "Automobile Statistics Dashboard"
+app.title = "Automobile Statistics Dashboard"
 
 #---------------------------------------------------------------------------------
 # Create the dropdown menu options
@@ -71,8 +71,9 @@ def update_input_container(selected_statistics):
 # Define the callback function to update the input container based on the selected statistics
 @app.callback(
     Output(component_id='output-container', component_property='children'),
-    [Input(component_id='select-year', component_property='value'), 
-     Input(component_id='dropdown-statistics', component_property='value')])
+    [Input(component_id='dropdown-statistics', component_property='value'),
+     Input(component_id='select-year', component_property='value')
+     ])
 
 
 def update_output_container(selected_statistics, input_year):
@@ -97,25 +98,25 @@ def update_output_container(selected_statistics, input_year):
         R_chart2  = dcc.Graph(figure=px.bar(average_sales,
                                             x= 'Vehicle_Type',
                                             y= 'Automobile_Sales',
-                                            title = 'Average Automobile Sales by Vehicle Type')
+                                            title = 'Average Automobile Sales by Vehicle Type'))
         
 # Plot 3 Pie chart for total expenditure share by vehicle type during recessions
         # use groupby to create relevant data for plotting
-        exp_rec= recession_data.groupby('Vehicle_Type')['Advertising_Expenditure'].sum()
+        exp_rec= recession_data.groupby('Vehicle_Type')['Advertising_Expenditure'].sum().reset_index()
         R_chart3 = dcc.Graph(
                     figure=px.pie(exp_rec,
                     values='Advertising_Expenditure',
                  names='Vehicle_Type',
                  title="Total Expenditure by Vehicle Type"
-                )
+                ))
 
 # Plot 4 bar chart for the effect of unemployment rate on vehicle type and sales
-        unempl = recession_data.groupby('Unemployment_Rate', 'Month')['Vehicle_Type'].Count()
+        unempl = recession_data.groupby(['Vehicle_Type','Unemployment_Rate'])['Automobile_Sales'].mean().reset_index()
         R_chart4 = dcc.Graph(
                     figure=px.bar(unempl,
-                    x='Unemployent',
-                    y= 'Count',
-                    title= 'Effect of Unemployment Rate on Vehivle Type and Sales')
+                    x='unemployent_rate',
+                    y= 'Automobile_Sales',
+                    title= 'Effect of Unemployment Rate on Vehicle Type and Sales')
                     )
 
 #TASK 2.6: Returning the graphs for displaying Recession data
@@ -124,8 +125,8 @@ def update_output_container(selected_statistics, input_year):
             html.Div(className='chart-item', children=[html.Div(children=R_chart3),html.Div(children=R_chart4)],style={'display':'flex'})
             ]
  # Yearly Statistic Report Plots                             
-    elif (input_year and selected_statistics=='selected_statistics') :
-        yearly_data = data[data['Year'] == Year]
+    elif (input_year and selected_statistics =='Yearly statistics') :
+        yearly_data = data[data['Year'] == input_year]
                               
 #TASK 2.5: Creating Graphs Yearly data
                               
@@ -134,7 +135,7 @@ def update_output_container(selected_statistics, input_year):
         Y_chart1 = dcc.Graph(figure=px.line(yas, x='Year', y='Automobile_Sales'))
             
 # Plot 2 Total Monthly Automobile sales using line chart.
-        monsales = data.groupby('Month')['Automobile_Sales'].sum().reset_index()
+        monsales = data.groupby('Vehicle_Sales')['Automobile_Sales'].sum().reset_index()
         Y_chart2 = dcc.Graph(figure=px.line(monsales, x='Month', y='Automobile_Sales'))
 
 # Plot bar chart for average number of vehicles sold during the given year
@@ -146,7 +147,7 @@ def update_output_container(selected_statistics, input_year):
         Y_chart4 = dcc.Graph(figure=px.pie(exp_data, values = 'Advertising_Expenditure', names='Vehicle_Type'))
 
 #TASK 2.6: Returning the graphs for displaying Yearly data
-         return [
+        return [
             html.Div(className='chart-item', children=[html.Div(children=Y_chart1),html.Div(children=Y_chart2)],style={'display': 'flex'}),
             html.Div(className='chart-item', children=[html.Div(children=Y_chart3),html.Div(children=Y_chart4)],style={'display': 'flex'})
             ]
@@ -157,4 +158,3 @@ def update_output_container(selected_statistics, input_year):
 # Run the Dash app
 if __name__ == '__main__':
     app.run_server(debug=True)
-
